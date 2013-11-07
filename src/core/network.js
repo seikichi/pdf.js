@@ -107,6 +107,9 @@ var NetworkManager = (function NetworkManagerClosure() {
         var rangeStr = args.begin + '-' + (args.end - 1);
         xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
         pendingRequest.expectedStatus = 206;
+        // I could not get Content-Range from Google Drive CORS response ...
+        // so, I save the begin parameter in here and use it in handling partial response
+        pendingRequest.begin = args.begin;
       } else {
         pendingRequest.expectedStatus = 200;
       }
@@ -185,9 +188,10 @@ var NetworkManager = (function NetworkManagerClosure() {
 
       var chunk = getArrayBuffer(xhr);
       if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
-        var rangeHeader = xhr.getResponseHeader('Content-Range');
-        var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
-        var begin = parseInt(matches[1], 10);
+        // var rangeHeader = xhr.getResponseHeader('Content-Range');
+        // var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
+        // var begin = parseInt(matches[1], 10);
+        var begin = pendingRequest.begin;
         pendingRequest.onDone({
           begin: begin,
           chunk: chunk

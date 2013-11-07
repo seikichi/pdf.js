@@ -103,20 +103,31 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           }
 
           var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
-          if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
-            return;
-          }
+          if ('isGoogleDrive' in source) {
+            // pass
+          } else {
+            if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
+              return;
+            }
 
-          var contentEncoding =
+            var contentEncoding =
             fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
-          if (contentEncoding !== 'identity') {
-            return;
+            if (contentEncoding !== 'identity') {
+              return;
+            }
           }
 
-          var length = fullRequestXhr.getResponseHeader('Content-Length');
-          length = parseInt(length, 10);
-          if (!isInt(length)) {
-            return;
+          // in Dropbox CORS, I can't get Content-Length from response header
+          // so I pass the 'bytes' params to PDFJS.getDocument and use it in here
+          // (the 'bytes' value can be obtained from Dropbox API)
+          if ('bytes' in source && source.bytes) {
+            var length = source.bytes;
+          } else {
+            var length = fullRequestXhr.getResponseHeader('Content-Length');
+            length = parseInt(length, 10);
+            if (!isInt(length)) {
+              return;
+            }
           }
 
           // NOTE: by cancelling the full request, and then issuing range
